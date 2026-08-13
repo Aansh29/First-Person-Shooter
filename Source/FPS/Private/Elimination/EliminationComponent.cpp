@@ -1,0 +1,64 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Elimination/EliminationComponent.h"
+#include "Player/ShooterPlayerState.h"
+#include "GameFramework/Pawn.h"
+
+
+UEliminationComponent::UEliminationComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+	
+}
+
+void UEliminationComponent::OnRoundReported(AActor* Attacker, AActor* Victim, bool bHit, bool bHeadShot, bool bLethal)
+{
+	AShooterPlayerState* AttackerPS = GetPlayerStateFromActor(Attacker);
+	if (!IsValid(AttackerPS)) return;
+	
+	ProcessHitOrMiss(bHit, AttackerPS);
+	
+	if (!bHit) return;
+	
+	AShooterPlayerState* VictimPS = GetPlayerStateFromActor(Victim);
+	if (!IsValid(VictimPS)) return;
+	
+	if (bLethal)
+	{
+		ProcessElimination(bHeadShot, AttackerPS, VictimPS);
+	}
+}
+
+void UEliminationComponent::ProcessHitOrMiss(bool bHit, AShooterPlayerState* AttackerPS)
+{
+	if (bHit)
+	{
+		AttackerPS->AddHit();
+	}
+	else
+	{
+		AttackerPS->AddMiss();
+	}
+}
+
+void UEliminationComponent::ProcessElimination(bool bHeadShot, AShooterPlayerState* AttackerPS,
+	AShooterPlayerState* VictimPS)
+{
+	AttackerPS->AddScoredKills();
+	VictimPS->AddDefeat();
+	
+	
+}
+
+AShooterPlayerState* UEliminationComponent::GetPlayerStateFromActor(AActor* Actor)
+{
+	APawn* Pawn = Cast<APawn>(Actor);
+	
+	if (IsValid(Pawn))
+	{
+		return Pawn->GetPlayerState<AShooterPlayerState>();
+	}
+	return nullptr;
+}
+
