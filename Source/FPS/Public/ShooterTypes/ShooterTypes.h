@@ -54,3 +54,21 @@ struct FReticleParams
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float TargetingPlayerInterpSpeed = 10.f;
 };
+
+UENUM(meta = (BitFlags))
+enum class ESpecialElimType : uint16
+{
+	None = 0,
+	HeadShot = 1 << 0,
+	Sequential = 1 << 1,
+	Streak = 1 << 2,
+	Revenge = 1 << 3,
+	Dethrone = 1 << 4,
+	Showstopper = 1 << 5,
+	FirstBlood = 1 << 6,
+	GainedTheLead = 1 << 7,
+	TiedTheLeader = 1 << 8,
+	LostTheLead = 1 << 9
+};
+
+ENUM_CLASS_FLAGS(ESpecialElimType)

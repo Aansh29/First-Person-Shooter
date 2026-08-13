@@ -27,6 +27,11 @@ public:
 	void AddShowStopperKill();
 	void GotFirstBlood();
 	void IsNowWinner();
+	void SetOnStreak(bool bIsOnStreak);
+	void SetLastAttacker(APlayerState* Attacker);
+	
+	APlayerState* GetLastAttacker() const;
+	bool IsOnStreak() const;
 	
 private:
 	int32 ScoredKills;
@@ -46,5 +51,5 @@ private:
 	bool bFirstBlood;
 	bool bWinner;
 	
-	
+	TWeakObjectPtr<APlayerState> LastAttacker;
 };
