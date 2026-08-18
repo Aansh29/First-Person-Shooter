@@ -4,8 +4,10 @@
 #include "Elimination/EliminationComponent.h"
 
 #include "Engine/World.h"
+#include "Game/ShooterGameStateBase.h"
 #include "Player/ShooterPlayerState.h"
 #include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "ShooterTypes/ShooterTypes.h"
 
 
@@ -61,6 +63,22 @@ void UEliminationComponent::ProcessElimination(bool bHeadShot, AShooterPlayerSta
 	ProcessHeadShot(bHeadShot, SpecialElimType, AttackerPS);
 	ProcessSequentialElimination(SpecialElimType, AttackerPS);
 	ProcessStreaks(SpecialElimType, AttackerPS, VictimPS);
+	
+	AShooterGameStateBase* GameState = Cast<AShooterGameStateBase>(UGameplayStatics::GetGameState(AttackerPS));
+	if (IsValid(GameState))
+	{
+		HandleFirstBlood(GameState, SpecialElimType, AttackerPS);
+		UpdateLeaderStatus(GameState, SpecialElimType, AttackerPS, VictimPS);
+	}
+	
+	if (HasSpecialElimTypes(SpecialElimType))
+	{
+		AttackerPS->Client_SpecialKill(SpecialElimType, SequentialKills, Streak, AttackerPS->GetScoredKills());
+	}
+	else
+	{
+		AttackerPS->Client_ScoredKill(AttackerPS->GetScoredKills());
+	}
 }
 
 void UEliminationComponent::ProcessHeadShot(bool bHeadShot, ESpecialElimType& OutElimType,
@@ -119,7 +137,51 @@ void UEliminationComponent::ProcessStreaks(ESpecialElimType& OutElimType, AShoot
 		AttackerPS->AddRevengeKill();
 		AttackerPS->SetLastAttacker(nullptr);
 	}
-	VictimPS->SetOnStreak(AttackerPS);
+	VictimPS->SetLastAttacker(AttackerPS);
+}
+
+void UEliminationComponent::HandleFirstBlood(AShooterGameStateBase* GameState, ESpecialElimType& OutElimType,
+	AShooterPlayerState* AttackerPS)
+{
+	if (!GameState->HasFirstBloodBeenHad())
+	{
+		OutElimType |= ESpecialElimType::FirstBlood;
+		AttackerPS->GotFirstBlood();
+	}
+}
+
+void UEliminationComponent::UpdateLeaderStatus(AShooterGameStateBase* GameState, ESpecialElimType& OutElimType,
+	AShooterPlayerState* AttackerPS, AShooterPlayerState* VictimPS)
+{
+	AShooterPlayerState* LastLeader = GameState->GetSoleLeader();
+	const bool bAttackerWasTiedForTheLead = GameState->IsTiedForTheLead(AttackerPS);
+	GameState->UpdateLeader();
+	if (!bAttackerWasTiedForTheLead && GameState->IsTiedForTheLead(AttackerPS))
+	{
+		// Attacker was not tied for lead earlier and is now tied for the lead
+		OutElimType |= ESpecialElimType::TiedTheLeader;
+	}
+	if (IsValid(LastLeader) && LastLeader != GameState->GetSoleLeader())
+	{
+		// Last leader has lost the lead
+		LastLeader->Client_LostTheLead();
+		
+		if (VictimPS == LastLeader)
+		{
+			OutElimType |= ESpecialElimType::Dethrone;
+			AttackerPS->AddDethroneKill();
+		}
+	}
+	
+	if (AttackerPS != LastLeader && AttackerPS == GameState->GetSoleLeader())
+	{
+		OutElimType |= ESpecialElimType::GainedTheLead;
+	}
+}
+
+bool UEliminationComponent::HasSpecialElimTypes(const ESpecialElimType& SpecialElimType) const
+{
+	return static_cast<uint16>(SpecialElimType) != 0;
 }
 
 AShooterPlayerState* UEliminationComponent::GetPlayerStateFromActor(AActor* Actor)

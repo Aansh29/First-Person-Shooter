@@ -18,10 +18,16 @@ struct FRecoilStep
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	float Pitch = 1.f;
+	float PitchMin = 1.f;
 
 	UPROPERTY(EditAnywhere)
-	float Yaw = 0.f;
+	float PitchMax = 1.f;
+
+	UPROPERTY(EditAnywhere)
+	float YawMin = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float YawMax = 0.f;
 };
 
 USTRUCT(BlueprintType)

@@ -553,8 +553,11 @@ void UCombatComponent::ApplyRecoil()
 
 	FRecoilStep Step = GetCurrentRecoilStep();
 
-	PC->AddPitchInput(-Step.Pitch);
-	PC->AddYawInput(Step.Yaw);
+	const float Pitch = FMath::FRandRange(Step.PitchMin, Step.PitchMax);
+	const float Yaw = FMath::FRandRange(Step.YawMin, Step.YawMax);
+
+	PC->AddPitchInput(-Pitch);
+	PC->AddYawInput(Yaw);
 
 	AdvanceRecoil();
 

@@ -3,9 +3,13 @@
 
 #include "Player/ShooterPlayerState.h"
 
+#include "TimerManager.h"
+#include "Data/SpecialElimData.h"
+#include "UI/Elims/SpecialElim.h"
+
 AShooterPlayerState::AShooterPlayerState()
 {
-	NetUpdateFrequency = 100.f;
+	SetNetUpdateFrequency(100.f);
 	
 	ScoredKills = 0;
 	Defeats = 0;
@@ -19,6 +23,8 @@ AShooterPlayerState::AShooterPlayerState()
 	ShowStopperKills = 0;
 	bFirstBlood = false;
 	bWinner = false;
+	bIsProcessingQueue = false;
+	ElimDisplayTime = 0.5f;
 }
 
 void AShooterPlayerState::AddScoredKills()
@@ -123,4 +129,121 @@ APlayerState* AShooterPlayerState::GetLastAttacker() const
 bool AShooterPlayerState::IsOnStreak() const
 {
 	return bOnStreak;
+}
+
+int32 AShooterPlayerState::GetScoredKills() const
+{
+	return ScoredKills;
+}
+
+TArray<ESpecialElimType> AShooterPlayerState::DecodeElimBitMask(ESpecialElimType ElimTypeBitmask)
+{
+	TArray<ESpecialElimType> ValidElims;
+	
+	uint16 BitMaskValue = static_cast<uint16>(ElimTypeBitmask);
+	
+	for (uint16 i = 0; i < 16; i++)
+	{
+		if (BitMaskValue & (1 << i))
+		{
+			ESpecialElimType EnumValue = static_cast<ESpecialElimType>(1 << i);
+			ValidElims.Add(EnumValue);
+		}
+	}
+	return ValidElims;
+}
+
+void AShooterPlayerState::Client_ScoredKill_Implementation(int32 KillScore)
+{
+	OnScoreChanged.Broadcast(KillScore);
+}
+
+void AShooterPlayerState::Client_SpecialKill_Implementation(const ESpecialElimType& SpecialElim,
+	int32 SequentialKillCount, int32 StreakCount, int32 KillScore)
+{
+	ensure(IsValid(SpecialElimData));
+	
+	OnScoreChanged.Broadcast(KillScore);
+	
+	TArray<ESpecialElimType> ElimTypes = DecodeElimBitMask(SpecialElim);
+	for (ESpecialElimType ElimType : ElimTypes)
+	{
+		FSpecialElimInfo& ElimMessageInfo = SpecialElimData->SpecialElimInfo.FindChecked(ElimType);
+		if (ElimType == ESpecialElimType::Sequential)
+		{
+			ElimMessageInfo.SequentialElimCount = SequentialKillCount;
+		}
+		
+		if (ElimType == ESpecialElimType::Streak)
+		{
+			ElimMessageInfo.StreakCount = StreakCount;
+		}
+		ElimMessageInfo.ElimType = ElimType;
+		SpecialElimQueue.Enqueue(ElimMessageInfo);
+	}
+	
+	if (!bIsProcessingQueue)
+	{
+		ProcessNextSpecialElim();
+	}
+}
+
+void AShooterPlayerState::ProcessNextSpecialElim()
+{
+	FSpecialElimInfo ElimInfo;
+	
+	if (SpecialElimQueue.Dequeue(ElimInfo))
+	{
+		bIsProcessingQueue = true;
+		ShowSpecialElim(ElimInfo);
+		
+		GetWorldTimerManager().SetTimerForNextTick([this]()
+		{
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &AShooterPlayerState::ProcessNextSpecialElim, ElimDisplayTime, false);
+		});
+	}
+	else
+	{
+		bIsProcessingQueue = false;
+	}
+}
+
+void AShooterPlayerState::ShowSpecialElim(const FSpecialElimInfo& ElimInfo)
+{
+	FString ElimMessageString = ElimInfo.ElimMessage;
+	if (ElimInfo.ElimType == ESpecialElimType::Sequential)
+	{
+		if (ElimInfo.SequentialElimCount == 2) ElimMessageString = FString("Double Kill!");
+		else if (ElimInfo.SequentialElimCount == 3) ElimMessageString = FString("Triple Kill!");
+		else if (ElimInfo.SequentialElimCount == 4) ElimMessageString = FString("Quad Kill!");
+		else if (ElimInfo.SequentialElimCount > 4) ElimMessageString = FString::Printf(TEXT("Rampage x%d!"), ElimInfo.SequentialElimCount);
+	}
+	if (ElimInfo.ElimType == ESpecialElimType::Streak) ElimMessageString = FString::Printf(TEXT("Streak x%d!"), ElimInfo.StreakCount);
+	
+	if (IsValid(SpecialElimWidgetClass))
+	{
+		USpecialElim* ElimWidget = CreateWidget<USpecialElim>(GetPlayerController(), SpecialElimWidgetClass);
+		if (IsValid(ElimWidget))
+		{
+			ElimWidget->InitializeWidget(ElimMessageString, ElimInfo.ElimIcon);
+			ElimWidget->AddToViewport();
+		}
+	}
+}
+
+void AShooterPlayerState::Client_LostTheLead_Implementation()
+{
+	ensure(IsValid(SpecialElimData));
+	FSpecialElimInfo& ElimMessageInfo = SpecialElimData->SpecialElimInfo.FindChecked(ESpecialElimType::LostTheLead);
+	
+	if (IsValid(SpecialElimWidgetClass))
+	{
+		USpecialElim* ElimWidget = CreateWidget<USpecialElim>(GetPlayerController(), SpecialElimWidgetClass);
+		if (IsValid(ElimWidget))
+		{
+			ElimWidget->InitializeWidget(ElimMessageInfo.ElimMessage, ElimMessageInfo.ElimIcon);
+			ElimWidget->AddToViewport();
+		}
+	}
 }

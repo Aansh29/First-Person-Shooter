@@ -3,9 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/SpecialElimData.h"
 #include "GameFramework/PlayerState.h"
 #include "ShooterPlayerState.generated.h"
 
+
+class USpecialElim;
+class USpecialElimData;
+enum class ESpecialElimType : uint16;
+
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FScoreChanged, int32, NewScore);
 
 UCLASS()
 class FPS_API AShooterPlayerState : public APlayerState
@@ -14,6 +22,9 @@ class FPS_API AShooterPlayerState : public APlayerState
 	
 public:
 	AShooterPlayerState();
+	
+	UPROPERTY(BlueprintAssignable)
+	FScoreChanged OnScoreChanged;
 	
 	void AddScoredKills();
 	void AddDefeat();
@@ -32,6 +43,25 @@ public:
 	
 	APlayerState* GetLastAttacker() const;
 	bool IsOnStreak() const;
+	int32 GetScoredKills() const;
+	
+	UFUNCTION(Client, Reliable)
+	void Client_LostTheLead();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ScoredKill(int32 KillScore);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_SpecialKill(const ESpecialElimType& SpecialElim, int32 SequentialKillCount, int32 StreakCount, int32 KillScore);
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "FPS|SpecialElims")
+	TObjectPtr<USpecialElimData> SpecialElimData;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "FPS|SpecialElims")
+	TSubclassOf<USpecialElim> SpecialElimWidgetClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "FPS|SpecialElims")
+	float ElimDisplayTime;
 	
 private:
 	int32 ScoredKills;
@@ -52,4 +82,10 @@ private:
 	bool bWinner;
 	
 	TWeakObjectPtr<APlayerState> LastAttacker;
+	
+	TArray<ESpecialElimType> DecodeElimBitMask(ESpecialElimType ElimTypeBitmask);
+	void ProcessNextSpecialElim();
+	void ShowSpecialElim(const FSpecialElimInfo& ElimInfo);
+	TQueue<FSpecialElimInfo> SpecialElimQueue;
+	bool bIsProcessingQueue;
 };
