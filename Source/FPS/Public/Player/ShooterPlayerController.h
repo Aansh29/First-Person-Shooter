@@ -9,6 +9,7 @@
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UScoreboard;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStateReplicated);
 
@@ -48,9 +49,30 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "FPS|Input")
 	TObjectPtr<UInputAction> JumpAction;
+	
+	UPROPERTY(EditAnywhere, Category = "FPS|Input")
+	TObjectPtr<UInputAction> ScoreboardAction;
+
+	UPROPERTY(EditAnywhere, Category = "FPS|UI")
+	TSubclassOf<UScoreboard> ScoreboardWidgetClass;
+	
+	UPROPERTY()
+	TObjectPtr<UScoreboard> ScoreboardWidget;
 
 	void Input_Crouch();
 	void Input_Jump();
 	void Input_Move(const FInputActionValue& Value);
 	void Input_Look(const FInputActionValue& Value);
+	void Input_ScoreboardStarted();
+	void Input_ScoreboardReleased();
+	
+	FTimerHandle ScoreboardUpdateTimer;
+
+	void UpdateScoreboard();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_RequestScoreboard();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ReceiveScoreboard(const TArray<FScoreboardEntry>& Entries);
 };

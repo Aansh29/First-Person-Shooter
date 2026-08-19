@@ -10,6 +10,11 @@ AShooterGameStateBase::AShooterGameStateBase()
 	bHasFirstBloodBeenHad = false;
 }
 
+void AShooterGameStateBase::MulticastScoreInfo_Implementation(int32 CurrentMaxKill)
+{
+	OnScoreInfoChanged.Broadcast(CurrentMaxKill);
+}
+
 bool AShooterGameStateBase::HasFirstBloodBeenHad() const
 {
 	return bHasFirstBloodBeenHad;
@@ -22,7 +27,7 @@ void AShooterGameStateBase::UpdateLeader()
 	{
 		const AShooterPlayerState* PlayerA = Cast<AShooterPlayerState>(&A);
 		const AShooterPlayerState* PlayerB = Cast<AShooterPlayerState>(&B);
-		return PlayerA->GetScoredKills() <= PlayerB->GetScoredKills();
+		return PlayerA->GetScoredKills() > PlayerB->GetScoredKills();
 	});
 	
 	Leaders.Empty();
@@ -64,6 +69,25 @@ AShooterPlayerState* AShooterGameStateBase::GetSoleLeader() const
 		return Leaders[0];
 	}
 	return nullptr;
+}
+
+AShooterPlayerState* AShooterGameStateBase::GetTopScorer() const
+{
+	if (Leaders.Num() > 0)
+	{
+		return Leaders[0];
+	}
+
+	return nullptr;
+}
+
+int32 AShooterGameStateBase::GetTopScore() const
+{
+	if (AShooterPlayerState* TopScorer = GetTopScorer())
+	{
+		return TopScorer->GetScoredKills();
+	}
+	return 0;
 }
 
 bool AShooterGameStateBase::IsTiedForTheLead(AShooterPlayerState* PlayerState)

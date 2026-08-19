@@ -72,3 +72,24 @@ enum class ESpecialElimType : uint16
 };
 
 ENUM_CLASS_FLAGS(ESpecialElimType)
+
+USTRUCT(BlueprintType)
+struct FScoreboardEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	FString PlayerName;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Kills = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Deaths = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 RevengeKills = 0;
+	
+	UPROPERTY(BlueprintReadOnly)
+	int32 Ping = 0;
+};

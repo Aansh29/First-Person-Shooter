@@ -4,6 +4,7 @@
 #include "Elimination/EliminationComponent.h"
 
 #include "Engine/World.h"
+#include "Game/ShooterGameModeBase.h"
 #include "Game/ShooterGameStateBase.h"
 #include "Player/ShooterPlayerState.h"
 #include "GameFramework/Pawn.h"
@@ -58,6 +59,13 @@ void UEliminationComponent::ProcessElimination(bool bHeadShot, AShooterPlayerSta
 	AttackerPS->AddScoredKills();
 	VictimPS->AddDefeat();
 	
+	AShooterGameModeBase* GameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(AttackerPS));
+	
+	if (AttackerPS->GetScoredKills() >= GameMode->TargetKills && IsValid(GameMode))
+	{
+		GameMode->FinishMatch();
+	}
+	
 	ESpecialElimType SpecialElimType{};
 	
 	ProcessHeadShot(bHeadShot, SpecialElimType, AttackerPS);
@@ -69,6 +77,8 @@ void UEliminationComponent::ProcessElimination(bool bHeadShot, AShooterPlayerSta
 	{
 		HandleFirstBlood(GameState, SpecialElimType, AttackerPS);
 		UpdateLeaderStatus(GameState, SpecialElimType, AttackerPS, VictimPS);
+		int32 MaxScore = FMath::Clamp(GameState->GetTopScore(), 0, GameMode->TargetKills);
+		GameState->MulticastScoreInfo(MaxScore);
 	}
 	
 	if (HasSpecialElimTypes(SpecialElimType))

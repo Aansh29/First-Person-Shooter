@@ -25,6 +25,7 @@ AShooterPlayerState::AShooterPlayerState()
 	bWinner = false;
 	bIsProcessingQueue = false;
 	ElimDisplayTime = 0.5f;
+	CurrentMatchTime = 120;
 }
 
 void AShooterPlayerState::AddScoredKills()
@@ -134,6 +135,16 @@ bool AShooterPlayerState::IsOnStreak() const
 int32 AShooterPlayerState::GetScoredKills() const
 {
 	return ScoredKills;
+}
+
+int32 AShooterPlayerState::GetDefeats() const
+{
+	return Defeats;
+}
+
+void AShooterPlayerState::Client_MatchResult_Implementation(bool bWon)
+{
+	OnMatchResultChanged.Broadcast(bWon);
 }
 
 TArray<ESpecialElimType> AShooterPlayerState::DecodeElimBitMask(ESpecialElimType ElimTypeBitmask)
@@ -246,4 +257,9 @@ void AShooterPlayerState::Client_LostTheLead_Implementation()
 			ElimWidget->AddToViewport();
 		}
 	}
+}
+
+void AShooterPlayerState::Client_MatchTimeChanged_Implementation(int32 RemainingTime)
+{
+	OnMatchTimeChanged.Broadcast(RemainingTime);
 }
