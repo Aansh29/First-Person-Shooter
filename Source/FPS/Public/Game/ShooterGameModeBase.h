@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "ShooterGameModeBase.generated.h"
 
+struct FScoreboardEntry;
+
 UCLASS()
 class FPS_API AShooterGameModeBase : public AGameModeBase
 {
@@ -18,7 +20,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category="FPS|Match")
 	int32 TargetKills;
-
+	
 protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="FPS|Match")
@@ -28,7 +30,7 @@ protected:
 	float ResultsDisplayTime = 10.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "FPS|Match")
-	FSoftObjectPath MatchMap;
+	FName MatchMap;
 
 	FTimerHandle MatchTimerHandle;
 	FTimerHandle MatchTimeBroadcastTimerHandle;

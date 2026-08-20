@@ -17,7 +17,10 @@ public class FPS : ModuleRules
 			"EnhancedInput", 
 			"GameplayTags", 
 			"PhysicsCore",
-			"UMG", "Slate", "SlateCore"
+			"UMG", "Slate", "SlateCore",
+			"OnlineSubsystemSteam",
+			"OnlineSubsystem",
+			"MultiplayerSessions"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput" });

@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/ShooterPlayerState.h"
+#include "ShooterTypes/ShooterTypes.h"
 
 AShooterGameModeBase::AShooterGameModeBase()
 {
@@ -104,24 +105,76 @@ void AShooterGameModeBase::FinishMatch()
 	}
 
 	bMatchFinished = true;
-	
+
 	GetWorldTimerManager().ClearTimer(MatchTimerHandle);
-	
 	GetWorldTimerManager().ClearTimer(MatchTimeBroadcastTimerHandle);
 
 	AShooterGameStateBase* ShooterGameState = GetGameState<AShooterGameStateBase>();
 
 	if (IsValid(ShooterGameState))
 	{
+		TArray<FScoreboardEntry> Entries;
+
 		for (APlayerState* PS : ShooterGameState->PlayerArray)
 		{
-			if (AShooterPlayerState* ShooterPS = Cast<AShooterPlayerState>(PS))
+			AShooterPlayerState* ShooterPS = Cast<AShooterPlayerState>(PS);
+
+			if (!IsValid(ShooterPS))
 			{
-				ShooterPS->Client_MatchTimeChanged(0);
+				continue;
 			}
+
+			FScoreboardEntry Entry;
+
+			Entry.PlayerName = ShooterPS->GetPlayerName();
+			Entry.Kills = ShooterPS->GetScoredKills();
+			Entry.Deaths = ShooterPS->GetDefeats();
+			Entry.RevengeKills = ShooterPS->GetRevengeKills();
+			Entry.Ping = ShooterPS->GetCompressedPing() * 4;
+
+			Entries.Add(Entry);
+		}
+
+		// Ranking:
+		// 1. Highest kills
+		// 2. Highest revenge kills
+		// 3. Lowest deaths
+		Entries.Sort([](const FScoreboardEntry& A, const FScoreboardEntry& B)
+		{
+			if (A.Kills != B.Kills)
+			{
+				return A.Kills > B.Kills;
+			}
+
+			if (A.RevengeKills != B.RevengeKills)
+			{
+				return A.RevengeKills > B.RevengeKills;
+			}
+
+			return A.Deaths < B.Deaths;
+		});
+
+		const int32 HighestKills = Entries.Num() > 0 ? Entries[0].Kills : 0;
+
+		// Match is over for everyone.
+		// Send each player their own win/lose result
+		// together with the complete final scoreboard.
+		for (APlayerState* PS : ShooterGameState->PlayerArray)
+		{
+			AShooterPlayerState* ShooterPS = Cast<AShooterPlayerState>(PS);
+
+			if (!IsValid(ShooterPS))
+			{
+				continue;
+			}
+
+			const bool bWon = ShooterPS->GetScoredKills() == HighestKills;
+
+			ShooterPS->Client_MatchTimeChanged(0);
+			ShooterPS->Client_MatchResult(bWon, Entries);
 		}
 	}
-	
+
 	GetWorldTimerManager().SetTimer(
 		ResultsTimerHandle,
 		this,
@@ -133,8 +186,10 @@ void AShooterGameModeBase::FinishMatch()
 
 void AShooterGameModeBase::RestartMatch()
 {
-	if (UWorld* World = GetWorld())
+	UWorld* World = GetWorld();
+	
+	if (IsValid(World))
 	{
-		World->ServerTravel(MatchMap.ToString(), true);
+		World->ServerTravel(MatchMap.ToString());
 	}
 }

@@ -15,7 +15,7 @@ enum class ESpecialElimType : uint16;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FScoreChanged, int32, NewScore);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMatchTimeChanged, int32, RemainingTime);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMatchResultChanged, bool, bWon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMatchResultChanged, bool, bWon, const TArray<FScoreboardEntry>&, Entries);
 
 UCLASS()
 class FPS_API AShooterPlayerState : public APlayerState
@@ -30,6 +30,12 @@ public:
 	
 	UPROPERTY(BlueprintAssignable)
 	FMatchTimeChanged OnMatchTimeChanged;
+	
+	UPROPERTY(BlueprintAssignable)
+	FMatchResultChanged OnMatchResultChanged;
+
+	UFUNCTION(Client, Reliable)
+	void Client_MatchResult(bool bWon, const TArray<FScoreboardEntry>& Entries);
 	
 	void AddScoredKills();
 	void AddDefeat();
@@ -50,6 +56,7 @@ public:
 	bool IsOnStreak() const;
 	int32 GetScoredKills() const;
 	int32 GetDefeats() const;
+	int32 GetRevengeKills() const;
 	
 	UFUNCTION(Client, Reliable)
 	void Client_LostTheLead();
@@ -75,12 +82,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "FPS|MatchTIme")
 	int32 CurrentMatchTime = 120;
 	int32 GetCurrentMatchTime() const { return CurrentMatchTime; }
-	
-	UPROPERTY(BlueprintAssignable)
-	FMatchResultChanged OnMatchResultChanged;
-
-	UFUNCTION(Client, Reliable)
-	void Client_MatchResult(bool bWon);
 	
 private:
 	int32 ScoredKills;

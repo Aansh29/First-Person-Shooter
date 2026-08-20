@@ -142,9 +142,14 @@ int32 AShooterPlayerState::GetDefeats() const
 	return Defeats;
 }
 
-void AShooterPlayerState::Client_MatchResult_Implementation(bool bWon)
+int32 AShooterPlayerState::GetRevengeKills() const
 {
-	OnMatchResultChanged.Broadcast(bWon);
+	return  RevengeKills;
+}
+
+void AShooterPlayerState::Client_MatchResult_Implementation(bool bWon, const TArray<FScoreboardEntry>& Entries)
+{
+	OnMatchResultChanged.Broadcast(bWon, Entries);
 }
 
 TArray<ESpecialElimType> AShooterPlayerState::DecodeElimBitMask(ESpecialElimType ElimTypeBitmask)

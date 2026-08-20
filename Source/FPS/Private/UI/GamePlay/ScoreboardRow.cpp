@@ -23,8 +23,13 @@ void UScoreboardRow::SetPlayerData(const FScoreboardEntry& Entry)
 		Deaths->SetText(FText::AsNumber(Entry.Deaths));
 	}
 
-	if (IsValid(Ping))
+	if (IsValid(Ping) && !IsGameOverRow)
 	{
 		Ping->SetText(FText::AsNumber(Entry.Ping));
+	}
+	
+	if (IsValid(Ping) && IsGameOverRow)
+	{
+		Ping->SetText(FText::AsNumber(Entry.RevengeKills));
 	}
 }

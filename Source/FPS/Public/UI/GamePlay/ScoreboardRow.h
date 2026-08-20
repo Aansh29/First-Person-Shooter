@@ -19,6 +19,9 @@ class FPS_API UScoreboardRow : public UUserWidget
 public:
 
 	void SetPlayerData(const FScoreboardEntry& Entry);
+	
+	UPROPERTY(EditDefaultsOnly)
+	bool IsGameOverRow = false;
 
 protected:
 
