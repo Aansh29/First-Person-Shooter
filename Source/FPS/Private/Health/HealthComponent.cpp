@@ -66,6 +66,19 @@ void UHealthComponent::ChangeMaxHealthByAmount(float Amount, AActor* Instigator)
 	OnMaxHealthChanged.Broadcast(this, OldValue, MaxHealth, Instigator);
 }
 
+void UHealthComponent::AddHealth(float Amount)
+{
+	if (Amount <= 0.f)
+	{
+		return;
+	}
+
+	float OldValue = Health;
+	Health = FMath::Clamp(Health + Amount,0.f, MaxHealth);
+
+	OnHealthChanged.Broadcast(this, OldValue, Health, nullptr);
+}
+
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();

@@ -53,6 +53,8 @@ public:
 	
 	UPROPERTY(BlueprintAssignable)
 	FDeathStarted OnDeathStarted;
+	
+	void AddHealth(float Amount);
 
 protected:
 	virtual void BeginPlay() override;

@@ -42,6 +42,7 @@ public:
 	virtual void Notify_ReloadWeapon_Implementation() override;
 	virtual void AddAmmo_Implementation(const FGameplayTag& WeaponType, int32 AmmoAmount) override;
 	virtual bool DoDamage_Implementation(float DamageAmount, AActor* DamageInstigator) override;
+	virtual void AddHealth_Implementation(float Amount) override;
 	/** Player Interface */
 	
 	

@@ -53,4 +53,7 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool DoDamage(float DamageAmount, AActor* DamageInstigator);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void AddHealth(float Amount);
 };

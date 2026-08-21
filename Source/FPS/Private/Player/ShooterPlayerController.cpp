@@ -5,7 +5,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "EnhancedInputComponent.h"
-#include "SNodePanel.h"
 #include "TimerManager.h"
 #include "Game/ShooterGameStateBase.h"
 #include "GameFramework/Character.h"

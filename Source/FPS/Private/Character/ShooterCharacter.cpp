@@ -309,6 +309,14 @@ bool AShooterCharacter::DoDamage_Implementation(float DamageAmount, AActor* Dama
 	return false;
 }
 
+void AShooterCharacter::AddHealth_Implementation(float Amount)
+{
+	if (HasAuthority() && IsValid(Health))
+	{
+		Health->AddHealth(Amount);
+	}
+}
+
 void AShooterCharacter::Multicast_HitReact_Implementation(int32 MontageIndex)
 {
 	if (GetNetMode() != NM_DedicatedServer && !IsLocallyControlled())
